@@ -17,7 +17,7 @@ import {
 } from "@shared/schema";
 import { nanoid } from "nanoid";
 import { db, pool } from "./db";
-import { eq, and, count, desc, sql } from "drizzle-orm";
+import { eq, and, count, desc, inArray, sql } from "drizzle-orm";
 import connectPg from "connect-pg-simple";
 import session from "express-session";
 
@@ -1319,18 +1319,20 @@ export class DatabaseStorage implements IStorage {
 
   // Bulk operations
   async bulkUpdateUserRoles(userIds: number[], role: string): Promise<void> {
+    if (userIds.length === 0) return;
     await db.update(users)
       .set({ role })
-      .where(sql`${users.id} = ANY(${userIds})`);
+      .where(inArray(users.id, userIds));
   }
 
   async bulkDeactivateUsers(userIds: number[]): Promise<void> {
+    if (userIds.length === 0) return;
     await db.update(users)
       .set({ 
         isActive: false,
         deactivatedAt: new Date()
       })
-      .where(sql`${users.id} = ANY(${userIds})`);
+      .where(inArray(users.id, userIds));
   }
 
   async exportUserData(userId: number): Promise<any> {
